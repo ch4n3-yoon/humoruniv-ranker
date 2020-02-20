@@ -41,7 +41,6 @@ class Content:
     def get_writer(self):
         nicks = self.soup.findAll('span', class_='hu_nick_txt')
         self.writer = str(nicks[0].string)
-        print(self.writer)
 
     def get_recommendation(self):
         self.recommendation = int(self.soup.find('span', id='ok_div').get_text())
