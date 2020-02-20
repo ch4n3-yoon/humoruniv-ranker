@@ -30,6 +30,7 @@ class Worker:
             for tr in tr_list:
                 tr_id = int(tr.get('id').replace('li_chk_{0}-'.format(table), ''))
                 c = Content(table, tr_id)
+                time.sleep(0.1)
                 datetime_ = '{0} {1}'.format(tr.find('span', class_='w_date').get_text(),
                                              tr.find('span', class_='w_time').get_text())
                 post_datetime = datetime.datetime.strptime(datetime_, '%Y-%m-%d %H:%M')
