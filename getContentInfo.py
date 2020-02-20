@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 
 
 class Content:
+    table = ''              # 게시판
     number = 0              # 글 고유번호
     content_url = ''        # 글 URL
     soup = ''               # BeautifulSoup 객체
@@ -14,9 +15,10 @@ class Content:
     comments = 0            # 댓글 수
     title = ''              # 글 제목
 
-    def __init__(self, number):
+    def __init__(self, table, number):
+        self.table = table
         self.number = number
-        self.content_url = 'http://web.humoruniv.com/board/humor/read.html?table=pds&number={0}'.format(number)
+        self.content_url = 'http://web.humoruniv.com/board/humor/read.html?table={0}&number={1}'.format(table, number)
         self.soup = BeautifulSoup(self.get_raw_content(), 'lxml')
         self.parse()
 
@@ -30,8 +32,6 @@ class Content:
     def get_raw_content(self):
         headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-            'Host': 'web.humoruniv1.com',
-            'Referer': 'http://web.humoruniv.com/main.html',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36',
         }
         r = requests.get(self.content_url, headers=headers)
@@ -56,5 +56,5 @@ class Content:
 
 
 if __name__ == '__main__':
-    c = Content(936490)
+    c = Content('pds', 936490)
     print(vars(c))
