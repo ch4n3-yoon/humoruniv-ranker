@@ -2,6 +2,7 @@
 
 import requests
 import datetime
+import time
 from bs4 import BeautifulSoup
 from getContentInfo import Content
 
@@ -28,8 +29,7 @@ class Worker:
             tr_list = soup.findAll('tr', id=lambda x: x and x.startswith('li_chk_{0}-'.format(table)))
             for tr in tr_list:
                 tr_id = int(tr.get('id').replace('li_chk_{0}-'.format(table), ''))
-                print(tr_id)
-                # c = Content(table, tr_id)
+                c = Content(table, tr_id)
                 datetime_ = '{0} {1}'.format(tr.find('span', class_='w_date').get_text(),
                                              tr.find('span', class_='w_time').get_text())
                 post_datetime = datetime.datetime.strptime(datetime_, '%Y-%m-%d %H:%M')
@@ -37,7 +37,6 @@ class Worker:
 
                 # 게시글을 작성한지 일주일 이상이 지남
                 if post_duration.days > 7:
-                    print('http://web.humoruniv.com/board/humor/list.html?table={0}&pg={1}'.format(table, i))
                     break_ = True
                     break
 
@@ -47,7 +46,42 @@ class Worker:
             if break_ is True:
                 break
 
+    def table_manager(self):
+        tables = {
+            '웃긴 자료': 'pds',
+            '대기 자료': 'pdswait',
+            '웃긴 제목': 'funtitle',
+            '대기 제목': 'titlewait',
+            '웃대툰': 'art_toon',
+            '신예툰': 'nova_toon',
+            '지식 KIN': 'kin',
+            '지식 OTL': 'otl',
+            '공포': 'fear',
+            '사진': 'photo',
+            '그림낙서': 'picture',
+            '웃긴유머': 'guest',
+            '웃대문학': 'novel',
+            '따듯한글': 'mild',
+            '왁자지껄': 'free',
+            '웃대 Poll': 'poll',
+            '게임': 'game',
+            '만화': 'thema2',
+            'LOL': 'lol',
+            '요리': 'cook',
+            '스포츠': 'pride',
+            '음악': 'muzik',
+            '영화': 'thema3',
+            '동물대학': 'animaluniv',
+            '컴퓨터': 'com',
+            '무협판타지': 'moofama',
+            '직장': 'workshop',
+        }
+
+        for table_name, table in tables.items():
+            print(table_name, '게시판 검색하는 중')
+            self.get_contents_list(table)
+
 
 if __name__ == '__main__':
     w = Worker(60 * 60)
-    w.get_contents_list('pdswait')
+    w.table_manager()
