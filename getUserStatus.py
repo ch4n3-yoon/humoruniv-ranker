@@ -5,13 +5,32 @@ import requests
 import random
 import re
 import time
+import subprocess
 from bs4 import BeautifulSoup
 from urllib import parse
 from datetime import datetime
 
 
+def run_command(command):
+    return subprocess.getoutput(command)
+
+
+def request(url):
+    user_agents = [
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41',
+    ]
+
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'User-Agent': user_agents[random.randint(0, len(user_agents) - 1)],
+        'Referer': 'http://web.humoruniv.com/board/humor/list.html?table=com',
+    }
+    result = subprocess.run(['curl', '--user-agent', headers['User-Agent'], url, '-s'], stdout=subprocess.PIPE, encoding='cp949')
+    return result.stdout
+
 def get_soup(url):
-    time.sleep(1)
     user_agents = [
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0',
@@ -24,20 +43,21 @@ def get_soup(url):
         'Referer': 'http://web.humoruniv.com/board/humor/list.html?table=com',
     }
     while True:
-        r = requests.get(url, headers=headers)
-        r.encoding = 'euc-kr'
-        if r.text.find('시스템 과부하 혹은 지나친 접속이 감지되어 서비스가 지연되고 있습니다. 잠시 기다리신 후에 다시 시도해 주세요.') > -1:
+        r = request(url)
+        # r.encoding = 'euc-kr'
+        if r.find('시스템 과부하 혹은 지나친 접속이 감지되어 서비스가 지연되고 있습니다. 잠시 기다리신 후에 다시 시도해 주세요.') > -1:
             print('웃긴대학에서 시스템 과부화를 감지하였습니다. 10초 뒤에 다시 시작합니다.')
             time.sleep(10)
         else:
             break
-    return BeautifulSoup(r.text, 'lxml')
+    return BeautifulSoup(r, 'lxml')
 
 
 class User:
     comments = []
     total_comments = 0
     end_page = 0
+    progress_rate = 0           # 진행율
 
     def __init__(self, nickname):
         self.nickname = nickname
@@ -94,6 +114,8 @@ class User:
     def get_all_comments(self):
         start_time = datetime.now()
         for page in range(1, self.end_page + 1):
+            self.progress_rate = page / self.end_page
+            print("진행율 {:.1%}".format(self.progress_rate))
             for comment in self.get_user_comment_list_from_page(page):
                 self.comments.append(comment)
         end_time = datetime.now()
@@ -108,5 +130,5 @@ class User:
 
 
 if __name__ == '__main__':
-    u = User('브라움만미드라고')
+    u = User('너12와봐')
     print(u.get_recommendation_average())
