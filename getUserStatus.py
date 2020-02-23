@@ -35,6 +35,7 @@ class User:
         self.nickname = nickname
         self.euc_kr_nickname = self.nickname.encode('euc-kr')
         self.get_page()
+        self.get_all_comments()
 
     # 사용자의 댓글 리스트에서 최대 페이지를 가져옴
     def get_page(self):
@@ -78,11 +79,21 @@ class User:
         return comments
 
     def get_all_comments(self):
+        start_time = datetime.now()
         for page in range(1, self.end_page + 1):
             for comment in self.get_user_comment_list_from_page(page):
                 self.comments.append(comment)
+        end_time = datetime.now()
+        execution_time = end_time - start_time
+        print('총 걸린 시간:', execution_time)
+
+    def get_recommendation_average(self):
+        recommendation_sum = 0
+        for comment in self.comments:
+            recommendation_sum += comment['recommendation']
+        return recommendation_sum / len(self.comments)
 
 
 if __name__ == '__main__':
     u = User('니가아는그애')
-    u.get_all_comments()
+    print(u.get_recommendation_average())
