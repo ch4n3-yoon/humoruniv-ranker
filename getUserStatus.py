@@ -4,12 +4,14 @@
 import requests
 import random
 import re
+import time
 from bs4 import BeautifulSoup
 from urllib import parse
 from datetime import datetime
 
 
 def get_soup(url):
+    time.sleep(1)
     user_agents = [
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0',
@@ -21,8 +23,14 @@ def get_soup(url):
         'User-Agent': user_agents[random.randint(0, len(user_agents) - 1)],
         'Referer': 'http://web.humoruniv.com/board/humor/list.html?table=com',
     }
-    r = requests.get(url, headers=headers)
-    r.encoding = 'euc-kr'
+    while True:
+        r = requests.get(url, headers=headers)
+        r.encoding = 'euc-kr'
+        if r.text.find('시스템 과부하 혹은 지나친 접속이 감지되어 서비스가 지연되고 있습니다. 잠시 기다리신 후에 다시 시도해 주세요.') > -1:
+            print('웃긴대학에서 시스템 과부화를 감지하였습니다. 10초 뒤에 다시 시작합니다.')
+            time.sleep(10)
+        else:
+            break
     return BeautifulSoup(r.text, 'lxml')
 
 
@@ -40,7 +48,7 @@ class User:
     # 사용자의 댓글 리스트에서 최대 페이지를 가져옴
     def get_page(self):
         soup = get_soup(self.set_url())
-        tmp = soup.select('div.page table td > span')[0].text
+        tmp = soup.select('div.page table td > span')[0].text.replace(',', '')
         [self.total_comments, self.end_page] = map(int, re.findall('\d+', tmp))
 
     def set_url(self, page=1):
@@ -51,7 +59,12 @@ class User:
     def get_user_comment_list_from_page(self, page):
         comments = []
         soup = get_soup(self.set_url(page))
+        # print(self.set_url(page))         # for debugging
         body = soup.find('div', class_='body_main')
+
+        # # for debugging
+        # if body is None:
+        #     print(soup.prettify())
         tr_list = body.find_all('tr')
         for tr in tr_list:
             span_nick = tr.find('span', class_='hu_nick_txt')
@@ -95,5 +108,5 @@ class User:
 
 
 if __name__ == '__main__':
-    u = User('니가아는그애')
+    u = User('브라움만미드라고')
     print(u.get_recommendation_average())
