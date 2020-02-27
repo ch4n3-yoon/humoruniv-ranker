@@ -25,9 +25,9 @@ def request(url):
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
         'User-Agent': user_agents[random.randint(0, len(user_agents) - 1)],
-        'Referer': 'http://web.humoruniv.com/board/humor/list.html?table=com',
+        'Referer': 'http://web.humoruniv.com/board/humor/list.html?asdfasdfasasdf',
     }
-    result = subprocess.run(['curl', '--user-agent', headers['User-Agent'], url, '-s'], stdout=subprocess.PIPE, encoding='cp949')
+    result = subprocess.run(['curl', '--user-agent', headers['User-Agent'], url, '-s', '-H', 'Accept-Encoding: gzip, deflate'], stdout=subprocess.PIPE, encoding='cp949')
     return result.stdout
 
 def get_soup(url):
@@ -40,7 +40,7 @@ def get_soup(url):
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
         'User-Agent': user_agents[random.randint(0, len(user_agents) - 1)],
-        'Referer': 'http://web.humoruniv.com/board/humor/list.html?table=com',
+        'Referer': 'http://web.humoruniv.com/board/humor/',
     }
     while True:
         r = request(url)
@@ -60,6 +60,7 @@ class User:
     progress_rate = 0           # 진행율
 
     def __init__(self, nickname):
+        self.comment_process_end = False
         self.nickname = nickname
         self.euc_kr_nickname = self.nickname.encode('euc-kr')
         self.get_page()
@@ -76,15 +77,19 @@ class User:
         url_encoded_nickname = parse.quote(self.euc_kr_nickname)
         return url.format(url_encoded_nickname, page)
 
-    def get_user_comment_list_from_page(self, page):
+    def get_user_comment_list_from_page(self, page, day_limit=7):
+
+        if self.comment_process_end is True:
+            return None
+
         comments = []
         soup = get_soup(self.set_url(page))
         # print(self.set_url(page))         # for debugging
         body = soup.find('div', class_='body_main')
 
         # # for debugging
-        # if body is None:
-        #     print(soup.prettify())
+        if body is None:
+            print(soup.prettify())
         tr_list = body.find_all('tr')
         for tr in tr_list:
             span_nick = tr.find('span', class_='hu_nick_txt')
@@ -93,10 +98,8 @@ class User:
                 # 댓글을 남긴 게시물에는 반대를 표현할 때 not_ok class를 불러오지 않는 점을 이용하여 댓글과 게시물을 구분한다.
                 if tr.find('span', class_='not_ok') is not None:
 
-                    # 추천 / 및 반대 파싱
                     recommendation = int(tr.find('span', class_='ok').text)
                     opposition = int(tr.find('span', class_='not_ok').text)
-
                     comment = tr.find('span', class_='comment').text
 
                     datetime_ = tr.find('span', class_='date').text
@@ -109,6 +112,11 @@ class User:
                         'comment_time': comment_time,
                     })
 
+                    # 지정한 일 수보다 오래된 댓글이면 저장하지 않음
+                    if (datetime.now() - comment_time).days > day_limit:
+                        self.comment_process_end = True
+                        return comments
+
         return comments
 
     def get_all_comments(self):
@@ -117,7 +125,8 @@ class User:
             self.progress_rate = page / self.end_page
             print("진행율 {:.1%}".format(self.progress_rate))
             for comment in self.get_user_comment_list_from_page(page):
-                self.comments.append(comment)
+                if comment is not None:
+                    self.comments.append(comment)
         end_time = datetime.now()
         execution_time = end_time - start_time
         print('총 걸린 시간:', execution_time)
@@ -130,5 +139,5 @@ class User:
 
 
 if __name__ == '__main__':
-    u = User('너12와봐')
+    u = User('송어회')
     print(u.get_recommendation_average())
